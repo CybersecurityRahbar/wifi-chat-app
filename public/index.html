@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دردشة عالمية - متصلة بالإنترنت</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Tajawal', sans-serif;
+        }
+        
+        :root {
+            --primary: #6C63FF;
+            --primary-dark: #5A52D3;
+            --secondary: #FF6584;
+            --dark: #2D2B55;
+            --light: #F8F9FA;
+            --gray: #8A8AA3;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --error: #F44336;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #6C63FF 0%, #9C67F5 100%);
+            --radius: 16px;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            height: 90vh;
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* الرأس */
+        .header {
+            background: var(--gradient);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff5722;
+            margin-left: 5px;
+            position: relative;
+        }
+        
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: inherit;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.connected {
+            background-color: var(--success);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+        
+        /* لوحة التحكم */
+        .control-panel {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .room-info {
+            background-color: #f9f9f9;
+            padding: 10px 15px;
+            font-size: 0.8rem;
+            display: none;
+        }
+        
+        /* منطقة الرسائل */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .received {
+            background-color: white;
+            border-bottom-right-radius: 5px;
+            align-self: flex-start;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .sent {
+            background: var(--gradient);
+            color: white;
+            border-bottom-left-radius: 5px;
+            margin-right: auto;
+            margin-left: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .message-sender {
+            font-size: 0.7rem;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+        
+        .message-time {
+            font-size: 0.6rem;
+            text-align: left;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+        
+        .system-message {
+            align-self: center;
+            background-color: #e0e0e0;
+            color: #666;
+            font-size: 0.8rem;
+            padding: 8px 15px;
+            border-radius: 15px;
+            margin: 10px 0;
+            max-width: 90%;
+            text-align: center;
+        }
+        
+        /* منطقة الإدخال */
+        .input-container {
+            display: flex;
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #eee;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+        }
+        
+        .send-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
+        }
+        
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* قائمة المستخدمين */
+        .users-panel {
+            background-color: white;
+            border-top: 1px solid #eee;
+            padding: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .users-title {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .users-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .user-badge {
+            background: var(--gradient);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .user-badge i {
+            font-size: 0.7rem;
+        }
+        
+        /* تصميم متجاوب */
+        @media (max-width: 480px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- رأس التطبيق -->
+        <div class="header">
+            <h1>دردشة عالمية 🌍</h1>
+            <p>اتصل بأي شخص في العالم</p>
+            <div class="status">
+                <span id="statusText">جاري الاتصال...</span>
+                <div class="status-dot" id="statusDot"></div>
+            </div>
+        </div>
+        
+        <!-- لوحة التحكم -->
+        <div class="control-panel">
+            <button class="btn btn-primary" id="createRoomBtn">
+                <i class="fas fa-plus-circle"></i>
+                إنشاء غرفة
+            </button>
+            <button class="btn btn-secondary" id="joinRoomBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                انضم لغرفة
+            </button>
+        </div>
+        
+        <div class="room-info" id="roomInfo">
+            <!-- سيتم ملؤها ديناميكياً -->
+        </div>
+        
+        <!-- منطقة الرسائل -->
+        <div class="messages-container" id="messagesContainer">
+            <div class="system-message">
+                🌍 مرحباً في الدردشة العالمية! أنشئ غرفة أو انضم إلى واحدة للبدء.
+            </div>
+        </div>
+        
+        <!-- منطقة الإدخال -->
+        <div class="input-container">
+            <input type="text" class="message-input" placeholder="اكتب رسالتك هنا..." id="messageInput" disabled>
+            <button class="send-button" id="sendButton" disabled>
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        
+        <!-- قائمة المستخدمين -->
+        <div class="users-panel">
+            <div class="users-title">
+                <i class="fas fa-users"></i>
+                المستخدمون المتصلون
+            </div>
+            <div class="users-list" id="usersList">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO Client -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // حالة التطبيق
+        const appState = {
+            isConnected: false,
+            currentRoom: null,
+            userName: `مستخدم_${Math.floor(Math.random() * 1000)}`,
+            socket: null
+        };
+
+        // عناصر DOM
+        const statusText = document.getElementById('statusText');
+        const statusDot = document.getElementById('statusDot');
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const roomInfo = document.getElementById('roomInfo');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const usersList = document.getElementById('usersList');
+
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        function initApp() {
+            // الاتصال بالخادم
+            appState.socket = io();
+            
+            // معالجات أحداث Socket.IO
+            appState.socket.on('connect', () => {
+                updateConnectionStatus(true, 'متصل بالخادم 🌍');
+                addSystemMessage('✅ تم الاتصال بالخادم بنجاح');
+                console.log('Connected to server');
+            });
+            
+            appState.socket.on('disconnect', () => {
+                updateConnectionStatus(false, 'غير متصل ❌');
+                addSystemMessage('❌ فقدت الاتصال بالخادم');
+            });
+            
+            appState.socket.on('room-info', (data) => {
+                addSystemMessage(data.message);
+                updateUsersList(data.users);
+                updateRoomInfo(data.roomId);
+            });
+            
+            appState.socket.on('receive-message', (data) => {
+                addMessageToUI(data.text, 'received', data.sender, data.timestamp);
+            });
+            
+            appState.socket.on('user-joined', (data) => {
+                addSystemMessage(data.message);
+                updateUsersList(data.users);
+            });
+            
+            appState.socket.on('user-left', (data) => {
+                addSystemMessage(data.message);
+                updateUsersList(data.users);
+            });
+
+            // إعداد واجهة المستخدم
+            createRoomBtn.addEventListener('click', createRoom);
+            joinRoomBtn.addEventListener('click', joinRoomHandler);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            sendButton.addEventListener('click', sendMessage);
+        }
+
+        function createRoom() {
+            const roomId = generateRoomId();
+            joinRoom(roomId);
+        }
+
+        function joinRoomHandler() {
+            const roomId = prompt('أدخل معرف الغرفة:');
+            if (!roomId) {
+                addSystemMessage('❌ لم تدخل معرف الغرفة');
+                return;
+            }
+            if (roomId.length < 3) {
+                addSystemMessage('❌ معرف الغرفة يجب أن يكون 3 أحرف على الأقل');
+                return;
+            }
+            joinRoom(roomId);
+        }
+
+        function joinRoom(roomId) {
+            appState.currentRoom = roomId;
+            
+            roomInfo.innerHTML = `
+                <strong>🆔 معرف الغرفة:</strong> ${roomId} - 
+                <strong>👤 المستخدم:</strong> ${appState.userName}
+            `;
+            roomInfo.style.display = 'block';
+            
+            updateConnectionStatus(true, `متصل بالغرفة ${roomId} ✅`);
+            
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            
+            addSystemMessage(`🔄 جاري الانضمام إلى غرفة ${roomId}...`);
+            
+            // الانضمام للغرفة على الخادم
+            appState.socket.emit('join-room', {
+                roomId: roomId,
+                userName: appState.userName
+            });
+        }
+
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (!messageText) return;
+            
+            const timestamp = new Date().toLocaleTimeString('ar-EG');
+            addMessageToUI(messageText, 'sent', appState.userName, timestamp);
+            
+            // إرسال الرسالة للخادم
+            appState.socket.emit('send-message', {
+                text: messageText
+            });
+            
+            messageInput.value = '';
+        }
+
+        function addMessageToUI(text, type, sender, timestamp) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            
+            messageElement.innerHTML = `
+                <div class="message-sender">${sender}</div>
+                ${text}
+                <div class="message-time">${timestamp}</div>
+            `;
+            
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function addSystemMessage(text) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('system-message');
+            messageElement.textContent = text;
+            
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function updateUsersList(users) {
+            usersList.innerHTML = '';
+            
+            users.forEach(user => {
+                const userBadge = document.createElement('div');
+                userBadge.classList.add('user-badge');
+                userBadge.innerHTML = `
+                    <i class="fas fa-user"></i>
+                    ${user.userName}
+                `;
+                
+                usersList.appendChild(userBadge);
+            });
+        }
+
+        function updateRoomInfo(roomId) {
+            roomInfo.innerHTML = `
+                <strong>🆔 معرف الغرفة:</strong> ${roomId} - 
+                <strong>👤 المستخدم:</strong> ${appState.userName} -
+                <strong>👥 الأعضاء:</strong> ${document.querySelectorAll('.user-badge').length}
+            `;
+        }
+
+        function updateConnectionStatus(connected, status) {
+            appState.isConnected = connected;
+            statusText.textContent = status;
+            
+            if (connected) {
+                statusDot.classList.add('connected');
+            } else {
+                statusDot.classList.remove('connected');
+            }
+        }
+
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function generateRoomId() {
+            return Math.random().toString(36).substring(2, 6).toUpperCase();
+        }
+    </script>
+</body>
+</html>
