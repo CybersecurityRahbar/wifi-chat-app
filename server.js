@@ -13,28 +13,28 @@ const io = socketIo(server, {
     }
 });
 
+// تخزين المستخدمين والغرف
+const rooms = new Map();
+const users = new Map();
+const activeRooms = new Set();
+
 // إنشاء وتوصيل قاعدة البيانات
 const db = new sqlite3.Database('./chat.db', (err) => {
     if (err) {
         console.error('خطأ في فتح قاعدة البيانات:', err.message);
     } else {
         console.log('✅ تم الاتصال بقاعدة البيانات SQLite');
-        // إنشاء جدول الرسائل إذا لم يكن موجوداً
         db.run(`CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             roomId TEXT NOT NULL,
             sender TEXT NOT NULL,
             message TEXT NOT NULL,
+            message_type TEXT DEFAULT 'text',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
     }
 });
 
-// تخزين المستخدمين والغرف (في الذاكرة)
-const rooms = new Map();
-const users = new Map();
-
-// خدمة الملفات الثابتة
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
@@ -47,14 +47,14 @@ app.get('/health', (req, res) => {
         status: 'OK', 
         users: users.size, 
         rooms: rooms.size,
-        database: 'SQLite'
+        features: ['text-messages', 'voice-messages', 'public-rooms']
     });
 });
 
-// دالة لتحميل الرسائل القديمة من قاعدة البيانات
+// دالة لتحميل الرسائل القديمة
 function loadRoomMessages(roomId, callback) {
     db.all(
-        "SELECT sender, message, timestamp FROM messages WHERE roomId = ? ORDER BY timestamp ASC",
+        "SELECT sender, message, message_type, timestamp FROM messages WHERE roomId = ? ORDER BY timestamp ASC",
         [roomId],
         (err, rows) => {
             if (err) {
@@ -67,30 +67,52 @@ function loadRoomMessages(roomId, callback) {
     );
 }
 
-// دالة لحفظ رسالة جديدة في قاعدة البيانات
-function saveMessage(roomId, sender, message) {
+// دالة لحفظ رسالة جديدة
+function saveMessage(roomId, sender, message, messageType = 'text') {
     db.run(
-        "INSERT INTO messages (roomId, sender, message) VALUES (?, ?, ?)",
-        [roomId, sender, message],
+        "INSERT INTO messages (roomId, sender, message, message_type) VALUES (?, ?, ?, ?)",
+        [roomId, sender, message, messageType],
         function(err) {
             if (err) {
                 console.error('خطأ في حفظ الرسالة:', err);
             } else {
-                console.log(`✅ تم حفظ رسالة في غرفة ${roomId} من ${sender}`);
+                console.log(`✅ تم حفظ ${messageType === 'audio' ? 'رسالة صوتية' : 'رسالة نصية'} في غرفة ${roomId}`);
             }
         }
     );
+}
+
+// دالة للحصول على الغرف النشطة
+function getActiveRoomsInfo() {
+    const roomsInfo = [];
+    activeRooms.forEach(roomId => {
+        if (rooms.has(roomId) && rooms.get(roomId).size > 0) {
+            const usersInRoom = Array.from(rooms.get(roomId)).map(socketId => 
+                users.get(socketId)?.userName
+            ).filter(Boolean);
+            
+            roomsInfo.push({
+                roomId: roomId,
+                usersCount: usersInRoom.length,
+                users: usersInRoom
+            });
+        }
+    });
+    return roomsInfo;
 }
 
 // Socket.IO events
 io.on('connection', (socket) => {
     console.log('مستخدم جديد متصل:', socket.id);
 
+    // إرسال قائمة الغرف النشطة للمستخدم الجديد
+    socket.emit('active-rooms', getActiveRoomsInfo());
+
     // انضمام المستخدم إلى غرفة
     socket.on('join-room', (data) => {
         const { roomId, userName } = data;
         
-        // مغادرة الغرف السابقة إن وجدت
+        // مغادرة الغرف السابقة
         if (socket.roomId) {
             socket.leave(socket.roomId);
         }
@@ -105,34 +127,52 @@ io.on('connection', (socket) => {
         // إضافة المستخدم للغرفة
         if (!rooms.has(roomId)) {
             rooms.set(roomId, new Set());
+            activeRooms.add(roomId);
         }
         rooms.get(roomId).add(socket.id);
 
-        // تحميل الرسائل القديمة وإرسالها للمستخدم الجديد
+        // تحميل الرسائل القديمة
         loadRoomMessages(roomId, (oldMessages) => {
             oldMessages.forEach(msg => {
-                socket.emit('receive-message', {
-                    text: msg.message,
-                    sender: msg.sender,
-                    timestamp: msg.timestamp,
-                    isOld: true // للإشارة أن هذه رسالة قديمة
-                });
+                if (msg.message_type === 'audio') {
+                    socket.emit('receive-message', {
+                        type: 'audio',
+                        audioUrl: msg.message,
+                        duration: 0,
+                        sender: msg.sender,
+                        timestamp: msg.timestamp,
+                        isOld: true
+                    });
+                } else {
+                    socket.emit('receive-message', {
+                        type: 'text',
+                        text: msg.message,
+                        sender: msg.sender,
+                        timestamp: msg.timestamp,
+                        isOld: true
+                    });
+                }
             });
         });
 
         // إعلام الآخرين بانضمام مستخدم جديد
         socket.to(roomId).emit('user-joined', {
             userName,
-            users: getUsersInRoom(roomId),
-            message: `${userName} انضم إلى الغرفة`
+            users: Array.from(rooms.get(roomId)).map(socketId => 
+                users.get(socketId)?.userName
+            ).filter(Boolean)
         });
 
-        // إرسال قائمة المستخدمين للمستخدم الجديد
+        // إرسال معلومات الغرفة للمستخدم الجديد
         socket.emit('room-info', {
             roomId: roomId,
-            users: getUsersInRoom(roomId),
-            message: `مرحباً ${userName}! لقد انضممت إلى غرفة ${roomId}`
+            users: Array.from(rooms.get(roomId)).map(socketId => 
+                users.get(socketId)?.userName
+            ).filter(Boolean)
         });
+
+        // تحديث قائمة الغرف للجميع
+        io.emit('active-rooms', getActiveRoomsInfo());
 
         console.log(`المستخدم ${userName} انضم للغرفة ${roomId}`);
     });
@@ -142,20 +182,41 @@ io.on('connection', (socket) => {
         const user = users.get(socket.id);
         if (user && user.roomId) {
             const messageData = {
+                type: data.type || 'text',
                 text: data.text,
+                audio: data.audio,
+                duration: data.duration,
                 sender: user.userName,
                 timestamp: new Date().toLocaleTimeString('ar-EG'),
                 roomId: user.roomId
             };
             
             // حفظ الرسالة في قاعدة البيانات
-            saveMessage(user.roomId, user.userName, data.text);
+            if (data.type === 'audio') {
+                saveMessage(user.roomId, user.userName, data.audio, 'audio');
+            } else {
+                saveMessage(user.roomId, user.userName, data.text, 'text');
+            }
             
             // إرسال الرسالة للجميع في الغرفة
             io.to(user.roomId).emit('receive-message', messageData);
             
-            console.log(`رسالة من ${user.userName} في غرفة ${user.roomId}: ${data.text}`);
+            console.log(`رسالة ${data.type} من ${user.userName} في غرفة ${user.roomId}`);
         }
+    });
+
+    // إنشاء غرفة جديدة
+    socket.on('create-room', (data) => {
+        const roomId = generateRoomId();
+        const userName = data.userName;
+        
+        socket.emit('room-created', { roomId, userName });
+        console.log(`تم إنشاء غرفة جديدة: ${roomId}`);
+    });
+
+    // طلب الغرف النشطة
+    socket.on('get-active-rooms', () => {
+        socket.emit('active-rooms', getActiveRoomsInfo());
     });
 
     // فصل المستخدم
@@ -164,52 +225,41 @@ io.on('connection', (socket) => {
         if (user) {
             const { userName, roomId } = user;
             
-            // إزالة المستخدم من الغرفة
             if (rooms.has(roomId)) {
                 rooms.get(roomId).delete(socket.id);
                 
                 // إعلام الآخرين بمغادرة المستخدم
                 socket.to(roomId).emit('user-left', {
                     userName,
-                    users: getUsersInRoom(roomId),
-                    message: `${userName} غادر الغرفة`
+                    users: Array.from(rooms.get(roomId)).map(socketId => 
+                        users.get(socketId)?.userName
+                    ).filter(Boolean)
                 });
 
                 // حذف الغرفة إذا كانت فارغة
                 if (rooms.get(roomId).size === 0) {
-                    rooms.delete(roomId);
-                    console.log(`تم حذف الغرفة ${roomId} لأنها أصبحت فارغة`);
+                    activeRooms.delete(roomId);
                 }
             }
 
             users.delete(socket.id);
+            
+            // تحديث قائمة الغرف
+            io.emit('active-rooms', getActiveRoomsInfo());
+            
             console.log(`المستخدم ${userName} غادر التطبيق`);
         }
     });
 });
 
-// دالة للحصول على المستخدمين في الغرفة
-function getUsersInRoom(roomId) {
-    if (!rooms.has(roomId)) return [];
-    
-    const usersInRoom = [];
-    rooms.get(roomId).forEach(socketId => {
-        const user = users.get(socketId);
-        if (user) {
-            usersInRoom.push({
-                userName: user.userName,
-                socketId: socketId
-            });
-        }
-    });
-    return usersInRoom;
+function generateRoomId() {
+    return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// بدء الخادم
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log('🚀 تطبيق الدردشة يعمل بنجاح!');
+    console.log('🚀 تطبيق الدردشة العامة يعمل بنجاح!');
     console.log(`📍 المحلي: http://localhost:${PORT}`);
-    console.log(`💾 قاعدة البيانات: SQLite (chat.db)`);
-    console.log(`✅ Health Check: http://localhost:${PORT}/health`);
+    console.log(`💾 قاعدة البيانات: SQLite`);
+    console.log(`🎤 الميزات: رسائل نصية وصوتية، غرف عامة`);
 });

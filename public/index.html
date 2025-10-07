@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دردشة عالمية - متصلة بالإنترنت</title>
+    <title>دردشة عامة - رسائل صوتية</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -156,6 +156,85 @@
             display: none;
         }
         
+        /* قسم الغرف المتاحة */
+        .rooms-panel {
+            background-color: white;
+            border-top: 1px solid #eee;
+            padding: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .rooms-title {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-align: center;
+            justify-content: center;
+        }
+        
+        .rooms-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .room-item {
+            background: linear-gradient(90deg, #f8f9fa, #e9ecef);
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s;
+        }
+        
+        .room-item:hover {
+            background: linear-gradient(90deg, #e9ecef, #dee2e6);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .room-info-panel {
+            flex: 1;
+        }
+        
+        .room-name {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #333;
+        }
+        
+        .room-users {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 3px;
+        }
+        
+        .join-room-btn {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .join-room-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(108, 99, 255, 0.3);
+        }
+        
         /* منطقة الرسائل */
         .messages-container {
             flex: 1;
@@ -192,8 +271,8 @@
             background: var(--gradient);
             color: white;
             border-bottom-left-radius: 5px;
-            margin-right: auto;
-            margin-left: 0;
+            margin-left: auto;
+            margin-right: 0;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
@@ -220,6 +299,106 @@
             margin: 10px 0;
             max-width: 90%;
             text-align: center;
+        }
+        
+        /* تحكمات الصوت */
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 10px;
+        }
+        
+        .voice-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .voice-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(108, 99, 255, 0.4);
+        }
+        
+        .voice-button.stop {
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+        }
+        
+        .voice-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .recording-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 65, 108, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: #ff416c;
+            font-size: 0.8rem;
+        }
+        
+        .pulse {
+            width: 12px;
+            height: 12px;
+            background: #ff416c;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* رسائل الصوت */
+        .audio-message {
+            max-width: 300px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .audio-message.sent {
+            background: var(--gradient);
+            color: white;
+            margin-left: auto;
+            margin-right: 0;
+        }
+        
+        .audio-message.received {
+            background-color: white;
+            color: #333;
+            margin-right: auto;
+            margin-left: 0;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin: 8px 0;
+        }
+        
+        .audio-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 20px;
+        }
+        
+        .audio-duration {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            text-align: center;
+            margin-top: 5px;
         }
         
         /* منطقة الإدخال */
@@ -321,6 +500,14 @@
             body {
                 padding: 0;
             }
+            
+            .voice-controls {
+                gap: 5px;
+            }
+            
+            .recording-indicator span {
+                font-size: 0.7rem;
+            }
         }
     </style>
 </head>
@@ -328,8 +515,8 @@
     <div class="container">
         <!-- رأس التطبيق -->
         <div class="header">
-            <h1>دردشة عالمية 🌍</h1>
-            <p>اتصل بأي شخص في العالم</p>
+            <h1>دردشة عامة 🎤</h1>
+            <p>رسائل نصية وصوتية - غرف عامة</p>
             <div class="status">
                 <span id="statusText">جاري الاتصال...</span>
                 <div class="status-dot" id="statusDot"></div>
@@ -344,8 +531,19 @@
             </button>
             <button class="btn btn-secondary" id="joinRoomBtn">
                 <i class="fas fa-sign-in-alt"></i>
-                انضم لغرفة
+                انضم للدردشة
             </button>
+        </div>
+        
+        <!-- قسم الغرف المتاحة -->
+        <div class="rooms-panel" id="roomsPanel" style="display: none;">
+            <div class="rooms-title">
+                <i class="fas fa-door-open"></i>
+                الغرف النشطة - اختر غرفة للانضمام
+            </div>
+            <div class="rooms-list" id="roomsList">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
         </div>
         
         <div class="room-info" id="roomInfo">
@@ -355,13 +553,28 @@
         <!-- منطقة الرسائل -->
         <div class="messages-container" id="messagesContainer">
             <div class="system-message">
-                🌍 مرحباً في الدردشة العالمية! أنشئ غرفة أو انضم إلى واحدة للبدء.
+                🎤 مرحباً! يمكنك إنشاء غرفة جديدة أو الانضمام إلى غرفة موجودة للبدء في الدردشة.
             </div>
         </div>
         
         <!-- منطقة الإدخال -->
         <div class="input-container">
             <input type="text" class="message-input" placeholder="اكتب رسالتك هنا..." id="messageInput" disabled>
+            
+            <!-- أزرار التحكم الصوتي -->
+            <div class="voice-controls">
+                <button class="voice-button" id="startRecordBtn" title="بدء التسجيل الصوتي" disabled>
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button class="voice-button stop" id="stopRecordBtn" title="إيقاف التسجيل" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <div class="recording-indicator" id="recordingIndicator" style="display: none;">
+                    <div class="pulse"></div>
+                    <span>جاري التسجيل...</span>
+                </div>
+            </div>
+            
             <button class="send-button" id="sendButton" disabled>
                 <i class="fas fa-paper-plane"></i>
             </button>
@@ -387,7 +600,10 @@
             isConnected: false,
             currentRoom: null,
             userName: `مستخدم_${Math.floor(Math.random() * 1000)}`,
-            socket: null
+            socket: null,
+            mediaRecorder: null,
+            audioChunks: [],
+            isRecording: false
         };
 
         // عناصر DOM
@@ -400,19 +616,22 @@
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const usersList = document.getElementById('usersList');
+        const startRecordBtn = document.getElementById('startRecordBtn');
+        const stopRecordBtn = document.getElementById('stopRecordBtn');
+        const recordingIndicator = document.getElementById('recordingIndicator');
+        const roomsPanel = document.getElementById('roomsPanel');
+        const roomsList = document.getElementById('roomsList');
 
         // تهيئة التطبيق
         document.addEventListener('DOMContentLoaded', initApp);
 
         function initApp() {
-            // الاتصال بالخادم
             appState.socket = io();
             
             // معالجات أحداث Socket.IO
             appState.socket.on('connect', () => {
                 updateConnectionStatus(true, 'متصل بالخادم 🌍');
                 addSystemMessage('✅ تم الاتصال بالخادم بنجاح');
-                console.log('Connected to server');
             });
             
             appState.socket.on('disconnect', () => {
@@ -420,63 +639,80 @@
                 addSystemMessage('❌ فقدت الاتصال بالخادم');
             });
             
+            appState.socket.on('active-rooms', (rooms) => {
+                updateRoomsList(rooms);
+            });
+            
             appState.socket.on('room-info', (data) => {
-                addSystemMessage(data.message);
-                updateUsersList(data.users);
                 updateRoomInfo(data.roomId);
+                updateUsersList(data.users);
+                addSystemMessage(`🎉 انضممت إلى غرفة ${data.roomId}`);
+                
+                // تمكين التحكم الصوتي بعد الانضمام للغرفة
+                startRecordBtn.disabled = false;
             });
             
             appState.socket.on('receive-message', (data) => {
-                addMessageToUI(data.text, 'received', data.sender, data.timestamp);
+                if (data.type === 'audio') {
+                    addAudioMessageToUI(data.audio, data.duration, 'received', data.sender, data.timestamp);
+                } else {
+                    addMessageToUI(data.text, 'received', data.sender, data.timestamp);
+                }
             });
             
             appState.socket.on('user-joined', (data) => {
-                addSystemMessage(data.message);
+                addSystemMessage(`👋 انضم ${data.userName} إلى الغرفة`);
                 updateUsersList(data.users);
             });
             
             appState.socket.on('user-left', (data) => {
-                addSystemMessage(data.message);
+                addSystemMessage(`🚪 غادر ${data.userName} الغرفة`);
                 updateUsersList(data.users);
             });
+            
+            appState.socket.on('room-created', (data) => {
+                joinRoom(data.roomId);
+            });
 
-            // إعداد واجهة المستخدم
+            // إعداد معالجات الأحداث
             createRoomBtn.addEventListener('click', createRoom);
-            joinRoomBtn.addEventListener('click', joinRoomHandler);
+            joinRoomBtn.addEventListener('click', showRoomsList);
             messageInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     sendMessage();
                 }
             });
             sendButton.addEventListener('click', sendMessage);
+            
+            // أحداث التسجيل الصوتي
+            startRecordBtn.addEventListener('click', startRecording);
+            stopRecordBtn.addEventListener('click', stopRecording);
         }
 
+        // وظائف إدارة الغرف
         function createRoom() {
             const roomId = generateRoomId();
             joinRoom(roomId);
         }
 
-        function joinRoomHandler() {
-            const roomId = prompt('أدخل معرف الغرفة:');
-            if (!roomId) {
-                addSystemMessage('❌ لم تدخل معرف الغرفة');
-                return;
+        function showRoomsList() {
+            roomsPanel.style.display = roomsPanel.style.display === 'none' ? 'block' : 'none';
+            if (roomsPanel.style.display === 'block') {
+                appState.socket.emit('get-active-rooms');
             }
-            if (roomId.length < 3) {
-                addSystemMessage('❌ معرف الغرفة يجب أن يكون 3 أحرف على الأقل');
-                return;
-            }
-            joinRoom(roomId);
         }
 
         function joinRoom(roomId) {
             appState.currentRoom = roomId;
             
             roomInfo.innerHTML = `
-                <strong>🆔 معرف الغرفة:</strong> ${roomId} - 
-                <strong>👤 المستخدم:</strong> ${appState.userName}
+                <strong>🆔 الغرفة:</strong> ${roomId} - 
+                <strong>👤 أنت:</strong> ${appState.userName}
             `;
             roomInfo.style.display = 'block';
+            
+            // إخفاء قائمة الغرف
+            roomsPanel.style.display = 'none';
             
             updateConnectionStatus(true, `متصل بالغرفة ${roomId} ✅`);
             
@@ -492,6 +728,7 @@
             });
         }
 
+        // وظائف إرسال الرسائل
         function sendMessage() {
             const messageText = messageInput.value.trim();
             if (!messageText) return;
@@ -501,23 +738,126 @@
             
             // إرسال الرسالة للخادم
             appState.socket.emit('send-message', {
-                text: messageText
+                text: messageText,
+                type: 'text'
             });
             
             messageInput.value = '';
         }
 
+        // وظائف التسجيل الصوتي
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                appState.mediaRecorder = new MediaRecorder(stream);
+                appState.audioChunks = [];
+                
+                appState.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        appState.audioChunks.push(event.data);
+                    }
+                };
+                
+                appState.mediaRecorder.onstop = sendAudioMessage;
+                
+                appState.mediaRecorder.start();
+                appState.isRecording = true;
+                
+                // تحديث الواجهة
+                startRecordBtn.style.display = 'none';
+                stopRecordBtn.style.display = 'flex';
+                recordingIndicator.style.display = 'flex';
+                
+            } catch (error) {
+                console.error('خطأ في الوصول للميكروفون:', error);
+                addSystemMessage('❌ لا يمكن الوصول إلى الميكروفون. تأكد من الصلاحيات.');
+            }
+        }
+
+        function stopRecording() {
+            if (appState.mediaRecorder && appState.isRecording) {
+                appState.mediaRecorder.stop();
+                appState.isRecording = false;
+                
+                // إيقاف جميع المسارات الصوتية
+                appState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                
+                // تحديث الواجهة
+                startRecordBtn.style.display = 'flex';
+                stopRecordBtn.style.display = 'none';
+                recordingIndicator.style.display = 'none';
+            }
+        }
+
+        function sendAudioMessage() {
+            const audioBlob = new Blob(appState.audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const duration = Math.round(audioBlob.size / 1000); // تقدير بسيط للمدة
+            
+            // عرض الرسالة الصوتية محلياً
+            const timestamp = new Date().toLocaleTimeString('ar-EG');
+            addAudioMessageToUI(audioUrl, duration, 'sent', appState.userName, timestamp);
+            
+            // تحويل الـ Blob إلى base64 للإرسال
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = function() {
+                const base64Audio = reader.result;
+                
+                // إرسال الرسالة الصوتية للخادم
+                appState.socket.emit('send-message', {
+                    audio: base64Audio,
+                    duration: duration,
+                    type: 'audio'
+                });
+            };
+        }
+
+        // وظائف عرض الرسائل
         function addMessageToUI(text, type, sender, timestamp) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message', type);
+            
+            const isMyMessage = sender === appState.userName;
+            const messageType = isMyMessage ? 'sent' : 'received';
+            
+            messageElement.classList.add('message', messageType);
             
             messageElement.innerHTML = `
-                <div class="message-sender">${sender}</div>
+                <div class="message-sender">${isMyMessage ? 'أنت' : sender}</div>
                 ${text}
                 <div class="message-time">${timestamp}</div>
             `;
             
             messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function addAudioMessageToUI(audioUrl, duration, type, sender, timestamp) {
+            const audioElement = document.createElement('div');
+            
+            const isMyMessage = sender === appState.userName;
+            const messageType = isMyMessage ? 'sent' : 'received';
+            
+            audioElement.classList.add('audio-message', messageType);
+            
+            // تحويل المدة إلى تنسيق مقروء
+            const durationText = duration < 60 ? 
+                `${duration} ثانية` : 
+                `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`;
+            
+            audioElement.innerHTML = `
+                <div class="message-sender">${isMyMessage ? 'أنت' : sender}</div>
+                <div class="audio-player">
+                    <audio controls>
+                        <source src="${audioUrl}" type="audio/wav">
+                        المتصفح لا يدعم تشغيل الصوت.
+                    </audio>
+                </div>
+                <div class="audio-duration">${durationText}</div>
+                <div class="message-time">${timestamp}</div>
+            `;
+            
+            messagesContainer.appendChild(audioElement);
             scrollToBottom();
         }
 
@@ -533,23 +873,49 @@
         function updateUsersList(users) {
             usersList.innerHTML = '';
             
-            users.forEach(user => {
+            users.forEach(userName => {
                 const userBadge = document.createElement('div');
                 userBadge.classList.add('user-badge');
                 userBadge.innerHTML = `
                     <i class="fas fa-user"></i>
-                    ${user.userName}
+                    ${userName}
                 `;
                 
                 usersList.appendChild(userBadge);
             });
         }
 
+        function updateRoomsList(rooms) {
+            roomsList.innerHTML = '';
+            
+            if (rooms.length === 0) {
+                roomsList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">لا توجد غرف نشطة حالياً</div>';
+                return;
+            }
+            
+            rooms.forEach(room => {
+                const roomElement = document.createElement('div');
+                roomElement.classList.add('room-item');
+                roomElement.innerHTML = `
+                    <div class="room-info-panel">
+                        <div class="room-name">غرفة ${room.roomId}</div>
+                        <div class="room-users">
+                            <i class="fas fa-users"></i>
+                            ${room.usersCount} مستخدم
+                        </div>
+                    </div>
+                    <button class="join-room-btn" onclick="joinRoom('${room.roomId}')">
+                        انضم
+                    </button>
+                `;
+                roomsList.appendChild(roomElement);
+            });
+        }
+
         function updateRoomInfo(roomId) {
             roomInfo.innerHTML = `
-                <strong>🆔 معرف الغرفة:</strong> ${roomId} - 
-                <strong>👤 المستخدم:</strong> ${appState.userName} -
-                <strong>👥 الأعضاء:</strong> ${document.querySelectorAll('.user-badge').length}
+                <strong>🆔 الغرفة:</strong> ${roomId} - 
+                <strong>👤 أنت:</strong> ${appState.userName}
             `;
         }
 
